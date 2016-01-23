@@ -88,3 +88,23 @@ let parentState$ = flyd.lift(
 ```
 
 # Render a module onto the page
+
+To render your module to the page, use the snabbdom patch function in combination with flyd.
+
+```
+import snabbdom from 'snabbdom'
+let patch = snabbdom.init([
+  require('snabbdom/modules/class')
+, require('snabbdom/modules/props')
+, require('snabbdom/modules/style')
+, require('snabbdom/modules/eventlisteners')
+])
+
+let container = document.querySelector('#container')
+let vnode$ = flyd.map(view, state$)
+let dom$ = flyd.scan(patch, container, vnode$)
+
+
+// inline:
+// flyd.scan(patch, document.querySelector('#container'), flyd.map(view, state$))
+```
