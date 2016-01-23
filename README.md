@@ -1,5 +1,5 @@
 
-# Functional Frontend Architecture with TodoMVC
+# Functional Frontend Architecture
 
 This is an example of a simple but robust functional frontend architecture, based on the Elm Architecture but further simplified, using only two libs:
 
@@ -20,18 +20,18 @@ Making a UI module:
 - Each module exports 3 basic components
   - View: a main 'view' function that takes a state and renders a Virtual DOM Tree
   - Event streams: any number of event streams that constitute the actions of the module's UI
-  - State stream: a single stream of module's state based on the different event streams, combined together using regular flyd functions like scanMerge and lift
+  - State stream: a single stream of module's state derived from the different event streams, combined together using scanMerge and lift
 
 Using UI modules:
 
 - First, import `childModule`, which gives you a view, events, and state stream
 - Call `childModule.view` within the parent's view function to embed the markup.
-- Use flyd/module/lift to merge the child module's state stream into your parent module's state stream
+- Use `flyd/module/lift` to merge the child module's state stream into your parent module's state stream
 - Use the child module's event streams directly if you need to set behavior in the child from the parent
 
 Rendering onto the page:
 
-- Use flyd.map on your parent module's view function over your state stream to produce a stream of new Virtual DOMs
+- Use `flyd.map` on your parent module's view function over your state stream to produce a stream of new Virtual DOMs
 - Scan that stream of Virtual DOMs with the snabbdom patch function and an initial HTML container
 
 Testing your UI:
@@ -56,6 +56,21 @@ A single-module, very simple example to get you started with the idea. The user 
 
 [View the source](examples/counter/index.es6)
 
+# scanMerge-ing events together
+
+Use `flyd/module/scanMerge` to combine events from your view into a single state stream.
+
+The streams on the left can be any flyd stream, and the functions on the right are state-updater functions and take the current state and a value from the stream, and return a new state.
+
+```js
+let state$ = flyd.immediate(flyd_scanMerge([
+  [addTodo$,      (state, formObj) => state.set('todos', state.get('todos').add(formObj))]
+, [removeTodo$,   (state, idx)     => state.set('todos', state.get('todos').delete(idx))]
+, [toggleTodo$,   (state, idx)     => state.setIn(['todos', idx, 'finished'], !state.getIn(['todos', idx, 'finished']))]
+, [editTodo$,     (state, data)    => state.setIn(['todos', data.idx, 'name'], data.name)]
+], defaultState))
+```
+
 # How to nest modules
 
 If you have a parent module and want to embed child modules, you can use flyd/module/lift:
@@ -71,3 +86,5 @@ let parentState$ = flyd.lift(
 , childModuleState3$
 )
 ```
+
+# Render a module onto the page
