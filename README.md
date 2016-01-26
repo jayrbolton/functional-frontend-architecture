@@ -17,22 +17,9 @@ Making a UI module:
 
 - The app consists of independent UI modules
 - UI modules can be nested and combined. They are hierarchical, similar to the DOM.
-- Each module exports 3 basic components
+- Each module exports 2 basic components
   - View: a main 'view' function that takes a state and renders a Virtual DOM Tree
-  - Event streams: any number of event streams that constitute the actions of the module's UI
-  - State stream: a single stream of module's state derived from the different event streams, combined together using scanMerge and lift
-
-Using UI modules:
-
-- First, import `childModule`, which gives you a view, events, and state stream
-- Call `childModule.view` within the parent's view function to embed the markup.
-- Use `flyd/module/lift` to merge the child module's state stream into your parent module's state stream
-- Use the child module's event streams directly if you need to set behavior in the child from the parent
-
-Rendering onto the page:
-
-- Use `flyd.map` on your parent module's view function over your state stream to produce a stream of new Virtual DOMs
-- Scan that stream of Virtual DOMs with the snabbdom patch function and an initial HTML container
+  - Init function: takes some configuration data and returns a state stream
 
 Testing your UI:
 
@@ -56,6 +43,12 @@ A single-module, very simple example to get you started with the idea. The user 
 
 [View the source](examples/counter/index.es6)
 
+# init function
+
+UI modules export an init function, which is a kind of constructor that can
+take configuration data. It is also responsible for initializind the default
+state, the various event streams, and returning the state stream.
+
 # scanMerge-ing events together
 
 Use `flyd/module/scanMerge` to combine events from your view into a single state stream.
@@ -70,6 +63,10 @@ let state$ = flyd.immediate(flyd_scanMerge([
 , [editTodo$,     (state, data)    => state.setIn(['todos', data.idx, 'name'], data.name)]
 ], defaultState))
 ```
+
+`flyd.immediate` is good to use so that your `defaultState` is pushed to your
+state stream immediately and rendered on pageload, rather than waiting around
+for an event to occur.
 
 # How to nest modules
 

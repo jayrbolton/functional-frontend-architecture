@@ -1,32 +1,43 @@
 import flyd from 'flyd'
 import flyd_scanMerge from 'flyd/module/scanmerge'
 import h from 'snabbdom/h'
+import {fromJS} from 'immutable'
 
-// Initialize a couple streams used in the view
-let increment$ = flyd.stream()
-let reset$ = flyd.stream()
+
+const init = ()=> {
+  let state = fromJS({
+    increment$: flyd.stream()
+  , reset$: flyd.stream()
+  , count: 0
+  })
+  // Initialize a couple streams used in the view
+  let increment$ = flyd.stream()
+  let reset$ = flyd.stream()
+  // Now we can use scanMerge to combine all our streams into a single state stream
+  return flyd_scanMerge([
+    [state.get('increment$'), (state, n) => state.set('count', state.get('count') + n)]
+  , [state.get('reset$'),     state => state.set('count', 0)]
+  ], state)
+}
 
 // Our counter view (all the markup with event handler streams)
 const view = state => 
   h('div', [
-    h('p', `Total count: ${state}`)
-  , h('button', {on: {click: [increment$, 1]}}, 'Increment!')
-  , h('button', {on: {click: [increment$, -1]}}, 'Decrement!')
-  , h('button', {on: {click: reset$}}, 'Reset!')
+    h('p', `Total count: ${state.get("count")}`)
+  , h('button', {on: {click: [state.get('increment$'), 1]}}, 'Increment!')
+  , h('button', {on: {click: [state.get('increment$'), -1]}}, 'Decrement!')
+  , h('button', {on: {click: state.get('reset$')}}, 'Reset!')
   ])
 
-
-// Now we can use scanMerge to combine all our streams into a single state stream
-let state$ = flyd_scanMerge([
-  [increment$, (count, n) => count + n]
-, [reset$,     count => 0]
-], 0)
 
 // Initialize our snabbdom patch function using any modules we want
 let patch = require('snabbdom').init([require('snabbdom/modules/eventlisteners')])
 
 // Plain HTML container node
 let container = document.querySelector('#container')
+
+// Initialize our state stream
+let state$ = init()
 
 // Generate a stream of new VTrees for every new value on the state stream
 let vnode$ = flyd.map(view, state$)
